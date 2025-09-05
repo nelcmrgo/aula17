@@ -387,7 +387,6 @@
                     this.y = y;
                     this.size = size;
                     this.speed = speed;
-                    this.life = 1;
                 }
                 draw() {
                     ctx.fillStyle = '#c0392b';
@@ -429,6 +428,7 @@
                     this.maxLife = life;
                     this.speed = 2;
                     this.direction = 1;
+                    this.isEntering = true; // Novo: controla a animação de entrada
                     this.shootInterval = setInterval(() => this.shoot(), 1000);
                 }
                 draw() {
@@ -447,9 +447,18 @@
                     ctx.fill();
                 }
                 update() {
-                    this.x += this.speed * this.direction;
-                    if (this.x > canvas.width - this.size / 2 || this.x < this.size / 2) {
-                        this.direction *= -1;
+                    if (this.isEntering) {
+                        // Faz o chefe descer até a posição desejada
+                        this.y += 2;
+                        if (this.y >= 100) {
+                            this.isEntering = false;
+                        }
+                    } else {
+                        // Movimento horizontal após a entrada
+                        this.x += this.speed * this.direction;
+                        if (this.x > canvas.width - this.size / 2 || this.x < this.size / 2) {
+                            this.direction *= -1;
+                        }
                     }
                 }
                 shoot() {
@@ -628,7 +637,6 @@
                                 createParticles(boss.x, boss.y, '#8e44ad', 100);
                                 score += 500;
                                 updateGameInfo();
-                                showMessage("Parabéns! Você ganhou!");
                                 boss = null;
                                 clearInterval(boss.shootInterval);
                                 isGameRunning = false;
