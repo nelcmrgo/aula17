@@ -212,6 +212,11 @@
             background-color: rgba(44, 62, 80, 0.9);
             border-radius: 10px;
         }
+        
+        #game-over-screen h2 {
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
 
         .hidden {
             display: none !important;
@@ -242,7 +247,7 @@
         </div>
 
         <div id="game-over-screen" class="hidden">
-            <h2>Você Perdeu!</h2>
+            <h2 id="game-over-title">Você Perdeu!</h2>
             <p id="final-score">Pontuação Final: 0</p>
             <div class="button-group">
                 <button id="restart-button">Jogar de Novo</button>
@@ -268,6 +273,7 @@
             const gameMenu = document.getElementById('game-menu');
             const instructionsElement = document.getElementById('instructions');
             const gameOverScreen = document.getElementById('game-over-screen');
+            const gameOverTitle = document.getElementById('game-over-title');
             const finalScoreElement = document.getElementById('final-score');
             const restartButton = document.getElementById('restart-button');
             const returnToMenuButton = document.getElementById('return-to-menu-button');
@@ -618,11 +624,11 @@
                                 createParticles(boss.x, boss.y, '#8e44ad', 100);
                                 score += 500;
                                 updateGameInfo();
-                                showMessage("Você venceu! O chefe foi derrotado!");
+                                showMessage("Parabéns! Você ganhou!");
                                 boss = null;
                                 clearInterval(boss.shootInterval);
                                 isGameRunning = false;
-                                endGame();
+                                endGame("win");
                             }
                         }
                     });
@@ -665,7 +671,7 @@
                     isInvincible = false;
                 }, 1500);
                 if (lives <= 0) {
-                    endGame("Fim de Jogo!");
+                    endGame("lose");
                 }
             }
 
@@ -720,7 +726,7 @@
                 showMessage("Atenção: O Chefe está Chegando!");
                 clearInterval(enemySpawnInterval);
                 setTimeout(() => {
-                    boss = new Boss(canvas.width / 2, -100, 150, 20); // x, y, size, life
+                    boss = new Boss(canvas.width / 2, -100, 250, 20); // x, y, size, life
                 }, 3000); // 3 segundos de aviso
             }
 
@@ -756,17 +762,18 @@
                 gameOverScreen.classList.add('hidden');
                 gameMenu.classList.add('hidden');
                 gameInfo.classList.remove('hidden');
+                canvas.classList.remove('hidden'); // Certifica que o canvas está visível
                 gameLoop();
                 enemySpawnInterval = setInterval(spawnObjects, 1000);
                 
                 // Configura o temporizador para a aparição do boss
                 bossSpawnTimer = setTimeout(() => {
                     spawnBoss();
-                }, 35000); // 35 segundos
+                }, 20000); // 20 segundos
             }
 
             // Função para encerrar o jogo
-            function endGame() {
+            function endGame(status) {
                 isGameRunning = false;
                 if (enemySpawnInterval) {
                     clearInterval(enemySpawnInterval);
@@ -776,6 +783,11 @@
                 }
                 if (bossSpawnTimer) {
                     clearTimeout(bossSpawnTimer);
+                }
+                if (status === "win") {
+                    gameOverTitle.textContent = "Parabéns! Você Venceu!";
+                } else {
+                    gameOverTitle.textContent = "Você Perdeu!";
                 }
                 finalScoreElement.textContent = `Pontuação Final: ${score}`;
                 gameInfo.classList.add('hidden');
@@ -808,6 +820,7 @@
                 gameOverScreen.classList.add('hidden');
                 gameMenu.classList.remove('hidden');
                 instructionsElement.classList.remove('hidden');
+                canvas.classList.remove('hidden');
             }
 
 
