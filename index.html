@@ -284,9 +284,10 @@
             let score = 0;
             let lives = 3;
             let currentPhase = 1;
-            const phaseThresholds = [100, 300, 500];
+            const phaseThresholds = [100, 300]; // Removido o limite de pontuação do boss
             let enemySpawnInterval;
             let isInvincible = false;
+            let bossSpawnTimer;
 
             // Função para redimensionar o canvas
             function resizeCanvas() {
@@ -577,12 +578,17 @@
                     obstacle.update();
                     obstacle.draw();
                     bullets.forEach((bullet, bulletIndex) => {
-                        const dist = Math.hypot(bullet.x - obstacle.x, bullet.y - obstacle.y);
+                        // Colisão de círculo-retângulo corrigida
+                        const closestX = Math.max(obstacle.x - obstacle.size, Math.min(bullet.x, obstacle.x + obstacle.size));
+                        const closestY = Math.max(obstacle.y - obstacle.size, Math.min(bullet.y, obstacle.y + obstacle.size));
+                        const dist = Math.hypot(closestX - bullet.x, closestY - bullet.y);
+                        
                         if (dist < obstacle.size) {
                             createParticles(obstacle.x, obstacle.y, '#7f8c8d');
                             bullets.splice(bulletIndex, 1);
                             score += 5;
                             updateGameInfo();
+                            obstacles.splice(obstacleIndex, 1); // Remove o obstáculo após a colisão
                         }
                     });
                     const distPlayer = Math.hypot(player.x - obstacle.x, player.y - obstacle.y);
@@ -680,12 +686,8 @@
                 } else if (currentPhase === 2 && score >= phaseThresholds[1]) {
                     currentPhase = 3;
                     clearInterval(enemySpawnInterval);
-                    showMessage("Atenção: O chefe está chegando!");
-                    spawnBoss();
-                } else if (currentPhase === 3 && score >= phaseThresholds[2] && !boss) {
-                    currentPhase = 4;
-                    showMessage("Você venceu o jogo! Parabéns!");
-                    endGame("Parabéns!");
+                    enemySpawnInterval = setInterval(spawnObjects, 500); // Inimigos ainda mais rápidos
+                    showMessage("Fase 3: Os inimigos estão ainda mais rápidos!");
                 }
             }
 
@@ -698,6 +700,8 @@
                     let speed = 1;
                     if (currentPhase === 2) {
                         speed = Math.random() * 3 + 1.5;
+                    } else if (currentPhase === 3) {
+                         speed = Math.random() * 4 + 2;
                     } else {
                          speed = Math.random() * 2 + 1;
                     }
@@ -712,7 +716,12 @@
 
             // Função para gerar o chefe de fase
             function spawnBoss() {
-                boss = new Boss(canvas.width / 2, 50, 150, 20); // x, y, size, life
+                if (boss) return; // Garante que o boss não é gerado duas vezes
+                showMessage("Atenção: O Chefe está Chegando!");
+                clearInterval(enemySpawnInterval);
+                setTimeout(() => {
+                    boss = new Boss(canvas.width / 2, -100, 150, 20); // x, y, size, life
+                }, 3000); // 3 segundos de aviso
             }
 
             // Função para mostrar mensagens na tela
@@ -749,6 +758,11 @@
                 gameInfo.classList.remove('hidden');
                 gameLoop();
                 enemySpawnInterval = setInterval(spawnObjects, 1000);
+                
+                // Configura o temporizador para a aparição do boss
+                bossSpawnTimer = setTimeout(() => {
+                    spawnBoss();
+                }, 35000); // 35 segundos
             }
 
             // Função para encerrar o jogo
@@ -760,6 +774,9 @@
                 if (boss && boss.shootInterval) {
                     clearInterval(boss.shootInterval);
                 }
+                if (bossSpawnTimer) {
+                    clearTimeout(bossSpawnTimer);
+                }
                 finalScoreElement.textContent = `Pontuação Final: ${score}`;
                 gameInfo.classList.add('hidden');
                 canvas.classList.add('hidden');
@@ -769,7 +786,7 @@
             // Função de contagem regressiva antes do jogo
             function startCountdown(duration) {
                 gameMenu.classList.add('hidden');
-                gameCanvas.classList.remove('hidden');
+                canvas.classList.remove('hidden');
                 let timer = duration;
                 countdownMessage.textContent = timer;
                 countdownMessage.classList.remove('hidden');
